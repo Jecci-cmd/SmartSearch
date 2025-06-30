@@ -1,0 +1,975 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SmartSearch - 学术搜索引擎</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+        }
+
+        body {
+            background: #f5f5f5;
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: flex-end;
+            padding: 10px 0;
+        }
+
+        .language-switch {
+            background: transparent;
+            border: 1px solid #4285f4;
+            color: #4285f4;
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.3s;
+        }
+
+        .language-switch:hover {
+            background: #4285f4;
+            color: white;
+        }
+
+        .search-box {
+            text-align: center;
+            margin-top: 60px;
+            position: relative;
+        }
+
+        .logo {
+            font-size: 3rem;
+            color: #4285f4;
+            margin-bottom: 20px;
+            font-weight: bold;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.1);
+        }
+
+        .search-container {
+            position: relative;
+            display: inline-block;
+            width: 100%;
+            max-width: 600px;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 15px 30px;
+            font-size: 1.1rem;
+            border: 2px solid #ddd;
+            border-radius: 30px;
+            outline: none;
+            transition: all 0.3s;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        .search-input:focus {
+            border-color: #4285f4;
+            box-shadow: 0 2px 10px rgba(66,133,244,0.2);
+        }
+
+        .search-history {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            width: 100%;
+            background: white;
+            border-radius: 0 0 15px 15px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            z-index: 10;
+            display: none;
+            overflow: hidden;
+            margin-top: 2px;
+        }
+
+        .search-history.active {
+            display: block;
+        }
+
+        .history-item {
+            padding: 12px 20px;
+            text-align: left;
+            border-bottom: 1px solid #f0f0f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .history-item:hover {
+            background: #f5f5f5;
+        }
+
+        .history-item:last-child {
+            border-bottom: none;
+        }
+
+        .history-text {
+            flex-grow: 1;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .history-delete {
+            color: #999;
+            cursor: pointer;
+            padding: 5px;
+            margin-left: 10px;
+        }
+
+        .history-delete:hover {
+            color: #e53935;
+        }
+
+        .history-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 20px;
+            background: #f8f8f8;
+            font-weight: bold;
+            color: #555;
+            border-bottom: 1px solid #eee;
+        }
+
+        .clear-all {
+            color: #4285f4;
+            cursor: pointer;
+            font-weight: normal;
+            font-size: 0.9rem;
+        }
+
+        .clear-all:hover {
+            text-decoration: underline;
+        }
+
+        .search-button {
+            background: #4285f4;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            margin-top: 20px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.3s;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .search-button:hover {
+            background: #2b6cd4;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(66,133,244,0.2);
+        }
+
+        .filters {
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .filter-toggle {
+            background: #e3f2fd;
+            color: #1e88e5;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.3s;
+        }
+
+        .filter-toggle:hover {
+            background: #bbdefb;
+        }
+
+        .filter-options {
+            display: none;
+            margin-top: 15px;
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .filter-options.active {
+            display: block;
+        }
+
+        .filter-section {
+            margin-bottom: 20px;
+        }
+
+        .filter-section h3 {
+            color: #1e88e5;
+            margin-bottom: 10px;
+            font-size: 1.1rem;
+        }
+
+        .year-select {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 1rem;
+            width: 100%;
+            max-width: 200px;
+        }
+
+       
+
+        .results-container {
+            margin-top: 30px;
+            display: none;
+        }
+
+        .results-container.active {
+            display: block;
+        }
+
+        .result-item {
+            background: white;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            transition: transform 0.2s, box-shadow 0.2s;
+            cursor: pointer;
+        }
+
+        .result-item:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .result-title {
+            color: #1a0dab;
+            font-size: 1.2rem;
+            text-decoration: none;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .result-title:hover {
+            text-decoration: underline;
+        }
+
+        .result-url {
+            color: #006621;
+            font-size: 0.9rem;
+        }
+
+        .result-snippet {
+            color: #545454;
+            margin-top: 8px;
+            line-height: 1.5;
+        }
+
+        /* 三级页面样式 */
+        .paper-page {
+            display: none;
+        }
+
+        .paper-container {
+            display: flex;
+            gap: 20px;
+        }
+
+        .paper-main {
+            flex: 70%;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 30px;
+        }
+
+        .paper-sidebar {
+            flex: 30%;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .sidebar-card {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 20px;
+        }
+
+        .paper-header {
+            margin-bottom: 20px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid #eee;
+        }
+
+        .paper-title {
+            font-size: 1.8rem;
+            color: #1a0dab;
+            margin-bottom: 10px;
+            line-height: 1.3;
+        }
+
+        .paper-doi {
+            display: inline-block;
+            background: #f0f7ff;
+            color: #4883e1;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 0.9rem;
+            margin-bottom: 15px;
+        }
+
+        .metrics {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .metric-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            color: #555;
+        }
+
+        .metric-value {
+            font-weight: bold;
+            color: #1a0dab;
+        }
+
+        .authors-section {
+            margin-bottom: 25px;
+        }
+
+        .author-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .author {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            background: #f5f5f5;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 0.95rem;
+        }
+
+        .author-name {
+            color: #1a0dab;
+            text-decoration: none;
+        }
+
+        .author-name:hover {
+            text-decoration: underline;
+        }
+
+        .section-title {
+            font-size: 1.2rem;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .abstract-section {
+            margin-bottom: 25px;
+        }
+
+        .abstract-text {
+            line-height: 1.6;
+            color: #444;
+            margin-bottom: 15px;
+        }
+
+        .keywords-cloud {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 15px;
+        }
+
+        .keyword {
+            padding: 5px 10px;
+            background: #f0f7ff;
+            border-radius: 15px;
+            font-size: 0.9rem;
+            color: #4883e1;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .keyword:hover {
+            background: #d8e7ff;
+        }
+
+        .sidebar-title {
+            font-size: 1.1rem;
+            color: #333;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .publication-info {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .info-label {
+            color: #666;
+        }
+
+        .info-value {
+            font-weight: 500;
+        }
+
+        .impact-factor {
+            color: #e53935;
+            font-weight: bold;
+        }
+
+        .open-access {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #2e7d32;
+            font-weight: 500;
+            margin: 10px 0;
+        }
+
+        .download-button {
+            display: block;
+            width: 100%;
+            padding: 10px;
+            background: #4883e1;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            text-align: center;
+            margin-top: 10px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .download-button:hover {
+            background: #3a6fc0;
+        }
+
+        .related-papers {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .related-paper {
+            padding: 12px;
+            background: #f9f9f9;
+            border-radius: 6px;
+            transition: background 0.2s;
+        }
+
+        .related-paper:hover {
+            background: #f0f0f0;
+        }
+
+        .related-title {
+            font-size: 0.95rem;
+            color: #1a0dab;
+            margin-bottom: 5px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+
+        .related-authors {
+            font-size: 0.8rem;
+            color: #666;
+        }
+
+        .back-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 8px 16px;
+            background: #f0f7ff;
+            color: #4883e1;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .back-button:hover {
+            background: #d8e7ff;
+        }
+
+        footer {
+            text-align: center;
+            padding: 20px 0;
+            color: #777;
+            font-size: 0.9rem;
+            margin-top: 40px;
+        }
+
+        @media (max-width: 768px) {
+            .paper-container {
+                flex-direction: column;
+            }
+            .search-input {
+                padding: 12px 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- 一级页面 -->
+    <div class="homepage" id="homepage">
+        <div class="container">
+            <div class="header">
+                <button class="language-switch" id="languageSwitch">English</button>
+            </div>
+            
+            <div class="search-box">
+                <div class="logo" id="logoText">SmartSearch</div>
+                <div class="search-container">
+                    <input 
+                        type="text" 
+                        class="search-input" 
+                        placeholder="输入搜索关键词..."
+                        id="searchInput"
+                        autocomplete="off"
+                        autofocus
+                    >
+                    <div class="search-history" id="searchHistory">
+                        <div class="history-header">
+                            <span id="historyTitle">搜索历史</span>
+                            <span class="clear-all" id="clearHistory">清除全部</span>
+                        </div>
+                    </div>
+                </div>
+                <button class="search-button" id="searchButton" onclick="performSearch()">开始搜索</button>
+            </div>
+
+            <div class="filters">
+                <button class="filter-toggle" id="filterToggle">Filters</button>
+                <div class="filter-options" id="filterOptions">
+                    <div class="filter-section">
+                        <h3>Year</h3>
+                        <select class="year-select" id="yearFilter">
+                            <option value="">All Years</option>
+                        </select>
+                    </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="results-container" id="resultsContainer">
+                <div class="result-item" onclick="showPaperPage()">
+                    <a href="#" class="result-title">The optimal paper Moebius band</a>
+                    <div class="result-url">https://doi.org/10.4007/annals.2025.201.1.5</div>
+                    <p class="result-snippet">We prove that a smooth embedded paper Moebius band must have aspect ratio greater than 3‾√...</p>
+                </div>
+            </div>
+
+            <footer id="footerText">
+                © 2023 SmartSearch - 让搜索更智能
+            </footer>
+        </div>
+    </div>
+
+    <!-- 三级页面 -->
+    <div class="paper-page" id="paper-page">
+        <div class="container">
+            <button class="back-button" onclick="showHomepage()">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="19" y1="12" x2="5" y2="12"></line>
+                    <polyline points="12 19 5 12 12 5"></polyline>
+                </svg>
+                返回主页
+            </button>
+            
+            <div class="paper-container">
+                <div class="paper-main">
+                    <div class="paper-header">
+                        <h1 class="paper-title">The optimal paper Moebius band</h1>
+                        <span class="paper-doi">DOI: https://doi.org/10.4007/annals.2025.201.1.5</span>
+                        <div class="metrics">
+                            <div class="metric-item">
+                                <span>被引量:</span>
+                                <span class="metric-value">0</span>
+                            </div>
+                            <div class="metric-item">
+                                <span>Altmetric:</span>
+                                <span class="metric-value">0</span>
+                            </div>
+                            <div class="metric-item">
+                                <span>阅读量:</span>
+                                <span class="metric-value">0</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="authors-section">
+                        <h3 class="section-title">作者信息</h3>
+                        <div class="author-list">
+                            <div class="author">
+                                <a href="#" class="author-name">Richard Evan Schwartz</a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="abstract-section">
+                        <h3 class="section-title">摘要与关键词</h3>
+                        <p class="abstract-text">
+                            We prove that a smooth embedded paper Moebius band must have aspect ratio greater than 3‾√
+                            . We also prove that any sequence of smooth embedded paper Moebius bands whose aspect ratio
+                            converges to 3‾√
+                            must converge, up to isometry, to the triangular Moebius band. These results answer the minimum aspect ratio question discussed by W. Wunderlich in 1962 and prove the more specific conjecture of B. Halpern and C. Weaver from 1977.
+                        </p>
+                        <div class="keywords-cloud">
+                            <div class="keyword">𝑇-patterns</div>
+                            <div class="keyword">Halpern-Weaver conjecture</div>
+                            <div class="keyword">developable surfaces</div>
+                            <div class="keyword">optimal Moebius band</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="paper-sidebar">
+                    <div class="sidebar-card">
+                        <h3 class="sidebar-title">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+                                <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+                            </svg>
+                            文献速览
+                        </h3>
+                        <div class="publication-info">
+                            <div class="info-item">
+                                <span class="info-label">发表年份:</span>
+                                <span class="info-value">2025</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">期刊:</span>
+                                <span class="info-value">Annals Of Mathematics</span>
+                            </div>
+                            <div class="info-item">
+                                <span class="info-label">影响因子:</span>
+                                <span class="info-value"><span class="impact-factor">4.9</span> (Q1)</span>
+                            </div>
+                        </div>
+                        <div class="open-access">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"></path>
+                            </svg>
+                            Open Access
+                        </div>
+                        <button class="download-button">下载全文PDF</button>
+                    </div>
+                    
+                    <div class="sidebar-card">
+                        <h3 class="sidebar-title">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                                <polyline points="15 3 21 3 21 9"></polyline>
+                                <line x1="10" y1="14" x2="21" y2="3"></line>
+                            </svg>
+                            共被引文献
+                        </h3>
+                        <div class="related-papers">
+                            <div class="related-paper">
+                                <div class="related-title">Attention Is All You Need</div>
+                                <div class="related-authors">Vaswani et al., 2017</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const translations = {
+            'zh': {
+                title: 'SmartSearch',
+                placeholder: '输入搜索关键词...',
+                searchButton: '开始搜索',
+                languageSwitch: 'English',
+                footer: '© 2023 SmartSearch - 让搜索更智能',
+                noQuery: '请输入搜索关键词',
+                noResults: '未找到相关结果',
+                searchHistory: '搜索历史',
+                clearAll: '清除全部',
+                filters: '筛选',
+                backToHome: '返回主页',
+                downloadPdf: '下载全文PDF'
+            },
+            'en': {
+                title: 'SmartSearch',
+                placeholder: 'Enter search keywords...',
+                searchButton: 'Search',
+                languageSwitch: '中文',
+                footer: '© 2023 SmartSearch - Making search smarter',
+                noQuery: 'Please enter search keywords',
+                noResults: 'No results found',
+                searchHistory: 'Search History',
+                clearAll: 'Clear All',
+                filters: 'Filters',
+                backToHome: 'Back to Home',
+                downloadPdf: 'Download Full PDF'
+            }
+        };
+    
+        let currentLang = 'zh';
+        let currentQuery = '';
+        let searchHistory = [];
+    
+        function loadSearchHistory() {
+            const savedHistory = localStorage.getItem('searchHistory');
+            if (savedHistory) searchHistory = JSON.parse(savedHistory) || [];
+        }
+    
+        function saveSearchHistory() {
+            localStorage.setItem('searchHistory', JSON.stringify(searchHistory));
+        }
+    
+        function addToHistory(query) {
+            if (!query) return;
+            searchHistory = searchHistory.filter(item => item.toLowerCase() !== query.toLowerCase());
+            searchHistory.unshift(query);
+            if (searchHistory.length > 10) searchHistory.pop();
+            saveSearchHistory();
+            renderSearchHistory();
+        }
+    
+        function clearAllHistory() {
+            searchHistory = [];
+            saveSearchHistory();
+            renderSearchHistory();
+            hideSearchHistory();
+        }
+    
+        function deleteHistoryItem(index, event) {
+            event.stopPropagation();
+            searchHistory.splice(index, 1);
+            saveSearchHistory();
+            renderSearchHistory();
+            if (searchHistory.length === 0) hideSearchHistory();
+        }
+    
+        function renderSearchHistory() {
+            const history = document.getElementById('searchHistory');
+            const header = history.querySelector('.history-header');
+            history.innerHTML = '';
+            history.appendChild(header);
+    
+            if (searchHistory.length === 0) {
+                const emptyItem = document.createElement('div');
+                emptyItem.className = 'history-item';
+                emptyItem.textContent = translations[currentLang].noResults;
+                history.appendChild(emptyItem);
+            } else {
+                searchHistory.forEach((item, index) => {
+                    const historyItem = document.createElement('div');
+                    historyItem.className = 'history-item';
+                    historyItem.innerHTML = `
+                        <span class="history-text">${item}</span>
+                        <span class="history-delete">✕</span>
+                    `;
+                    historyItem.querySelector('.history-delete').addEventListener('click', (e) => deleteHistoryItem(index, e));
+                    historyItem.addEventListener('click', () => {
+                        document.getElementById('searchInput').value = item;
+                        performSearch();
+                    });
+                    history.appendChild(historyItem);
+                });
+            }
+        }
+    
+        function showSearchHistory() {
+            if (searchHistory.length > 0) document.getElementById('searchHistory').classList.add('active');
+        }
+    
+        function hideSearchHistory() {
+            document.getElementById('searchHistory').classList.remove('active');
+        }
+    
+        function showHomepage() {
+            document.getElementById('homepage').style.display = 'block';
+            document.getElementById('paper-page').style.display = 'none';
+            document.title = translations[currentLang].title;
+        }
+    
+        function showPaperPage(doi, title) {
+            // Dynamically populate paper page with data
+            document.getElementById('homepage').style.display = 'none';
+            document.getElementById('paper-page').style.display = 'block';
+            document.querySelector('.paper-title').textContent = title || 'Paper Title';
+            document.querySelector('.paper-doi').textContent = `DOI: ${doi}`;
+            document.title = `${title || 'Paper'} - ${translations[currentLang].title}`;
+        }
+    
+        function switchLanguage() {
+            currentLang = currentLang === 'zh' ? 'en' : 'zh';
+            updateUILanguage();
+        }
+    
+        function updateUILanguage() {
+            document.getElementById('logoText').textContent = translations[currentLang].title;
+            document.getElementById('searchInput').placeholder = translations[currentLang].placeholder;
+            document.getElementById('searchButton').textContent = translations[currentLang].searchButton;
+            document.getElementById('languageSwitch').textContent = translations[currentLang].languageSwitch;
+            document.getElementById('footerText').textContent = translations[currentLang].footer;
+            document.getElementById('historyTitle').textContent = translations[currentLang].searchHistory;
+            document.getElementById('clearHistory').textContent = translations[currentLang].clearAll;
+            document.getElementById('filterToggle').textContent = translations[currentLang].filters;
+            document.querySelector('.back-button').innerHTML = `
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="19" y1="12" x2="5" y2="12"></line>
+                    <polyline points="12 19 5 12 12 5"></polyline>
+                </svg>
+                ${translations[currentLang].backToHome}
+            `;
+            document.querySelector('.download-button').textContent = translations[currentLang].downloadPdf;
+            document.title = translations[currentLang].title;
+            renderSearchHistory();
+        }
+    
+        async function performSearch() {
+    const query = document.getElementById('searchInput').value.trim();
+    if (!query) {
+        alert(translations[currentLang].noQuery);
+        return;
+    }
+    currentQuery = query;
+    addToHistory(query);
+
+    try {
+        // 发送查询到后端API
+        const response = await fetch('http://localhost:5000/search', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ query: query, year: document.getElementById('yearFilter').value }),
+        });
+
+        if (!response.ok) {
+            throw new Error('搜索请求失败');
+        }
+
+        const results = await response.json();
+        renderSearchResults(results);
+        document.getElementById('resultsContainer').classList.add('active');
+    } catch (error) {
+        console.error('搜索错误:', error);
+        alert('搜索失败，请稍后重试');
+    }
+}
+
+function renderSearchResults(results) {
+    const resultsContainer = document.getElementById('resultsContainer');
+    resultsContainer.innerHTML = '';
+
+    if (results.length === 0) {
+        const noResult = document.createElement('div');
+        noResult.className = 'result-item';
+        noResult.textContent = translations[currentLang].noResults;
+        resultsContainer.appendChild(noResult);
+        return;
+    }
+
+    results.forEach(result => {
+        const resultItem = document.createElement('div');
+        resultItem.className = 'result-item';
+        resultItem.innerHTML = `
+            <a href="#" class="result-title">${result.title}</a>
+            <div class="result-url">${result.doi}</div>
+            <p class="result-snippet">${result.abstract || '无摘要'}</p>
+        `;
+        resultItem.onclick = () => showPaperPage(result); // 传递结果数据到三级页面
+        resultsContainer.appendChild(resultItem);
+    });
+}
+
+// 修改 showPaperPage 以动态显示论文详情
+function showPaperPage(result = null) {
+    document.getElementById('homepage').style.display = 'none';
+    document.getElementById('paper-page').style.display = 'block';
+
+    if (result) {
+        document.querySelector('.paper-title').textContent = result.title;
+        document.querySelector('.paper-doi').textContent = `DOI: ${result.doi}`;
+        document.querySelector('.abstract-text').textContent = result.abstract || '无摘要';
+        // 可以进一步动态更新作者、关键词等字段
+        document.title = `${result.title} - ${translations[currentLang].title}`;
+    }
+}
+    
+        function toggleFilters() {
+            const filterOptions = document.getElementById('filterOptions');
+            filterOptions.classList.toggle('active');
+        }
+    
+        document.addEventListener('DOMContentLoaded', () => {
+            loadSearchHistory();
+    
+            const yearSelect = document.getElementById('yearFilter');
+            for (let year = 2025; year >= 2007; year--) {
+                const option = document.createElement('option');
+                option.value = year;
+                option.textContent = year;
+                yearSelect.appendChild(option);
+            }
+    
+            document.getElementById('languageSwitch').addEventListener('click', switchLanguage);
+            document.getElementById('searchInput').addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') performSearch();
+            });
+            document.getElementById('searchInput').addEventListener('focus', showSearchHistory);
+            document.getElementById('filterToggle').addEventListener('click', toggleFilters);
+            document.getElementById('yearFilter').addEventListener('change', performSearch);
+    
+            document.addEventListener('click', (e) => {
+                const input = document.getElementById('searchInput');
+                const history = document.getElementById('searchHistory');
+                if (e.target !== input && !history.contains(e.target)) hideSearchHistory();
+            });
+    
+            document.getElementById('clearHistory').addEventListener('click', clearAllHistory);
+            updateUILanguage();
+            renderSearchHistory();
+        });
+    </script>
+</body>
+</html>
